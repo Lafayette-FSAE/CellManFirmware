@@ -74,7 +74,7 @@ int main(void)
 
         // LED on
         PORT(LED_PORT, ODR) |= LED_PIN; // PB_ODR |= (1 << 5);
-        delay(300000L);
+        delay(600000L);
         // LED off
         PORT(LED_PORT, ODR) &= ~LED_PIN; // PB_ODR &= ~(1 << 5);
         delay(300000L);
