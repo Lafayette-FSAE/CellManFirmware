@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include "stm8.h"
 
+#include "blink.h"
+
 
 /* Build in LED is in pin B5 (STM8S103 board) or D3 (STM8S003F3 board) */
 #ifdef STM8S103
@@ -54,29 +56,29 @@ uint16_t analog_read() {
     return (ADC_DRH << 2) | (ADC_DRL >> 6);  // Left aligned
 }
 
-int main(void)
-{
-    /* Set clock to full speed (16 Mhz) */
-    CLK_CKDIVR = 0;
+// int main(void)
+// {
+//     /* Set clock to full speed (16 Mhz) */
+//     CLK_CKDIVR = 0;
 
-    /* GPIO setup */
-    // Set pin data direction as output
-    PORT(LED_PORT, DDR)  |= LED_PIN; // i.e. PB_DDR |= (1 << 5);
-    // Set pin as "Push-pull"
-    PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
+//     /* GPIO setup */
+//     // Set pin data direction as output
+//     PORT(LED_PORT, DDR)  |= LED_PIN; // i.e. PB_DDR |= (1 << 5);
+//     // Set pin as "Push-pull"
+//     PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
 
-    // int value;
+//     // int value;
 
-	while(1) {
-        // value = analog_read();
+// 	while(1) {
+//         // value = analog_read();
 
-        // long delay_length = 300000L;
+//         // long delay_length = 300000L;
 
-        // LED on
-        PORT(LED_PORT, ODR) |= LED_PIN; // PB_ODR |= (1 << 5);
-        delay(600000L);
-        // LED off
-        PORT(LED_PORT, ODR) &= ~LED_PIN; // PB_ODR &= ~(1 << 5);
-        delay(300000L);
-    }
-}
+//         // LED on
+//         PORT(LED_PORT, ODR) |= LED_PIN; // PB_ODR |= (1 << 5);
+//         delay(600000L);
+//         // LED off
+//         PORT(LED_PORT, ODR) &= ~LED_PIN; // PB_ODR &= ~(1 << 5);
+//         delay(300000L);
+//     }
+// }

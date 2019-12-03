@@ -1,18 +1,12 @@
 ## Select one of these
 DEVICE=stm8s003f3
-# DEVICE=stm8s103f3
 
-## A directory for common include files
-COMMONDIR = src
+CC = sdcc
+PROGRAMMER = stlinkv2
 
-## A directory for user source files
-SOURCEDIR = src
-
-## A directory for library files
-LIBDIR = libs
-
-## Build Directory
-BUILDDIR = build
+BUILD_DIR = ./build
+SRC_DIR = ./src
+INC_DIR = ./inc
 
 ## Get program name from enclosing directory name
 PROGRAM = $(lastword $(subst /, ,$(CURDIR)))
@@ -20,10 +14,6 @@ PROGRAM = $(lastword $(subst /, ,$(CURDIR)))
 SOURCES=$(wildcard $(SOURCEDIR)/*.c)
 OBJECTS=$(notdir $(SOURCES:.c=.rel))
 HEADERS=$(wildcard $(SOURCEDIR)/*.h)
-
-CC = sdcc
-PROGRAMMER = stlinkv2
-
 
 DEFINES=
 ## Set MCU-type DEFINE
@@ -34,24 +24,26 @@ ifeq ($(DEVICE),stm8s103f3)
     DEFINES += -DSTM8S103
 endif
 
-CPPFLAGS = -I$(LIBDIR)/inc -I$(SOURCEDIR)
-VPATH = src:$(LIBDIR)/src
+# CPPFLAGS = -I$(LIBDIR)/inc -I$(SOURCEDIR)
+# VPATH = src:$(LIBDIR)/src
 
-CFLAGS = --Werror --std-sdcc99 -mstm8 $(DEFINES)
-LDFLAGS = -lstm8 -mstm8 --out-fmt-ihx
+CFLAGS =  -mstm8 -I$(INC_DIR) -D$(DEVICE) $(DEFINES) -c
+LFLAGS = -lstm8 -mstm8 --out-fmt-ihx
 
-.PHONY: all clean flash
+BUILD_ARTIFACTS = $(BUILD_DIR)
 
-$(BUILDDIR)/$(PROGRAM).ihx: $(BUILDDIR)/$(OBJECTS)
-	@mkdir -p $(BUILDDIR)
-	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+.PHONY: all default flash
 
-$(BUILDDIR)/%.rel : $(SOURCEDIR)/%.c $(HEADERS)
-	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+all: $(BUILD_DIR)/main.ihx
+
+default: $(BUILD_DIR)/main.ihx
+
+$(BUILD_DIR)/main.ihx : $(SRC_DIR)/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES))
+	@mkdir -p $(BUILD_DIR)
+	sdcc -mstm8 -I$(INC_DIR) -D STM8S003 $(LFLAGS) src/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) -o $(BUILD_DIR)/main.ihx
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILD_DIR)
 
 flash: $(BUILDDIR)/$(PROGRAM).ihx
 	stm8flash -c $(PROGRAMMER) -p $(DEVICE) -w $(BUILDDIR)/$(PROGRAM).ihx
