@@ -32,18 +32,18 @@ LFLAGS = -lstm8 -mstm8 --out-fmt-ihx
 
 BUILD_ARTIFACTS = $(BUILD_DIR)
 
-.PHONY: all default flash
+.PHONY: all default flash clean
 
 all: $(BUILD_DIR)/main.ihx
 
 default: $(BUILD_DIR)/main.ihx
 
-$(BUILD_DIR)/main.ihx : $(SRC_DIR)/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES))
+$(BUILD_DIR)/main.ihx : $(SRC_DIR)/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) clean
 	@mkdir -p $(BUILD_DIR)
 	sdcc -mstm8 -I$(INC_DIR) -D STM8S003 $(LFLAGS) src/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) -o $(BUILD_DIR)/main.ihx
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-flash: $(BUILDDIR)/$(PROGRAM).ihx
-	stm8flash -c $(PROGRAMMER) -p $(DEVICE) -w $(BUILDDIR)/$(PROGRAM).ihx
+flash: $(BUILD_DIR)/main.ihx
+	stm8flash -c $(PROGRAMMER) -p $(DEVICE) -w $(BUILD_DIR)/main.ihx
