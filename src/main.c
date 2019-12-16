@@ -84,7 +84,7 @@ void i2c_inter (void) __interrupt 19 {
 
 		// reading I2C_DR also resets the RXNE bit
 		// so it is important that this gets read every time
-		value = I2C_DR;
+		// value = I2C_DR;
 
 		return;
 	}
@@ -127,6 +127,31 @@ void i2c_inter (void) __interrupt 19 {
 
 int main(void)
 {
+	// configure gpio inputs
+
+	// set pins to input mode
+	PC_DDR &= 0b00010111;
+	PA_DDR &= 0b11111100;
+
+	// set pins to pull up mode
+	PC_CR1 |= 0b11101000;
+	PA_CR1 |= 0b00000011;
+
+	// infer address from gpio
+	unsigned int a4 = (PC_IDR & 0b10000000);
+	unsigned int a3 = (PC_IDR & 0b01000000);
+	unsigned int a0 = (PA_IDR & 0b00000010);
+
+	int address;
+
+	if(a0){
+		address = 10;
+	} else {
+		value = 'A';
+		address = 11;
+	}
+
+
     /* Set clock to full speed (16 Mhz) */
     CLK_CKDIVR = 0;
 
@@ -136,7 +161,7 @@ int main(void)
     // Set pin as "Push-pull"
 	PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
 
-	i2c_init();
+	i2c_init(address);
 	set_led(1);
 
 	temp_value = 100;
@@ -146,9 +171,9 @@ int main(void)
 		temp_value = adc_read(3);
 
 		if(value == 'A'){
-			// set_led(0);
+			set_led(0);
 		} else {
-			// set_led(1);
+			set_led(1);
 		}
 
 		delay(value * 3000L);

@@ -6,7 +6,7 @@
 
 #define TEST_I2C 1234
 
-void i2c_init(){
+void i2c_init(int address){
 	rim(); // enable interrupts
 
 	I2C_CR1 = 0;					// Disable I2C peripheral in order to modify it
@@ -25,7 +25,9 @@ void i2c_init(){
 	I2C_OARH &= 0b01111001;
 	I2C_OARH |= 0b01000001;
 
-	I2C_OARL = 0x60;					//  Set this device address to be 0x50.
+	I2C_OARL = address << 1;		//  Set this device address.
+
+	// I2C_OARL = 10 << 1;
 
 	I2C_TRISER = 17;
 
