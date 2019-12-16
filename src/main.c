@@ -1,9 +1,9 @@
 /* The "Hello world!" of microcontrollers. Blink LED on/off */
 #include <stdint.h>
-#include "stm8.h"
 
-#define LED_PORT    PA
-#define LED_PIN     PIN3
+#include "stm8.h"
+#include "i2c.h"
+#include "utils.h"
 
 /* I2C */
 // #define I2C_CR1 *(volatile unsigned char *)0x5210
@@ -25,65 +25,51 @@ int address_received_flag;
 int i2c_activity;
 
 unsigned char value;
+unsigned char temp_value;
 
-void i2c_init(){
-	rim(); // enable interrupts
+// typedef enum {
+// 	WAITING,
+// 	ADDING,
+// 	SENDING
+// } StateType;
 
-	I2C_CR1 = 0;					// Disable I2C peripheral in order to modify it
-	I2C_FREQR = 16;					//  Set the internal clock frequency (MHz).
+// StateType state;
 
-	// I2C_CCRH_F_S = 0;				//  I2C running is standard mode.
-	// I2C_CCRH_CCR = 0x00;
 
-	I2C_CCRH &= 0b01110000;
-	I2C_CCRL = 0xa0;				//  SCL clock speed is 50 KHz.
+unsigned int adc_read(unsigned int channel){
+	unsigned int val=0;
 
-	// I2C_OARH_ADDMODE = 0;           //  7 bit address mode.
-	// I2C_OARH_ADD = 0;               //  Set this device address to be 0x50.
-	// I2C_OARH_ADDCONF = 1;           //  Docs say this must always be 1.
+	set_led(0);
 
-	I2C_OARH &= 0b01111001;
-	I2C_OARH |= 0b01000001;
+	ADC_CSR &= 0b01111111;
 
-	I2C_OARL = 0x60;					//  Set this device address to be 0x50.
+	ADC_CSR |= ((0x0F) & channel); // Select Channel
+	ADC_CR2 |= (1 << 3); // Right Aligned DATA
+	ADC_CR1 |= (1 << 0); // ADC ON
+	ADC_CR1 |= (1 << 0); // ADC Start Conversion
 
-	I2C_TRISER = 17;
+	// Wait until EOC bit is set by hardware
+	while((ADC_CSR) & 0b10000000 == 0);
 
-	// I2C_ITR_ITBUFEN = 1;            //  Buffer interrupt enabled.
-	// I2C_ITR_ITEVTEN = 1;            //  Event interrupt enabled.
-	// I2C_ITR_ITERREN = 1;
+	// copy data from data registers into value
+	val |= (unsigned int) ADC_DRL;
+	val |= (unsigned int) ADC_DRH << 8;
 
-	I2C_ITR &= 0b1111111;
-	I2C_ITR |= 0b0000111;
+	// stop ADC conversion
+	ADC_CR1 &= ~(1 << 0);
 
-	I2C_CR1 |= 0b00000001;					// re-enable peripheral
+	set_led(1);
 
-	I2C_CR2 |= 0b00000100;
-}
+	val &= 0x3FF;
+	return val;
 
-void set_led(int value){
-	if(value){
-		PORT(LED_PORT, ODR) |= LED_PIN; // PB_ODR |= (1 << 5);
-	} else {
-		PORT(LED_PORT, ODR) &= ~LED_PIN; // PB_ODR &= ~(1 << 5);
-	}
-}
-
-/* Simple busy loop delay */
-void delay(unsigned long count) {
-	while (count--) nop();
 }
 
 void i2c_inter (void) __interrupt 19 {
-	// I2C_SR1;
-	// I2C_SR2;
-	// I2C_SR3;
 
-	// unsigned char value;
-
+	// Check Address Bit
+	// Occurs at start of I2C packet
 	if(I2C_SR1 & 0b00000010){
-		// set_led(1);
-		address_received_flag = !address_received_flag;
 
 		// clear ADDR by reading SR1 followed by SR3
 		I2C_SR1;
@@ -92,52 +78,51 @@ void i2c_inter (void) __interrupt 19 {
 		return;
 	}
 
+	// Check RXNE bit
+	// Occurs after each byte when there is data to read in the DR register
 	if(I2C_SR1 & 0b01000000){
+
+		// reading I2C_DR also resets the RXNE bit
+		// so it is important that this gets read every time
 		value = I2C_DR;
 
 		return;
 	}
 
+	// Check TXE bit
+	if(I2C_SR1 & 0b10000000){
+		I2C_DR = temp_value;
+
+		return;
+	}
+
+	// Check AF bit
+	// should occur when master stops requesting data
+	if(I2C_SR2 & 0b00000100){
+
+		// clear AF bit by writing a 0 to it
+		I2C_SR2 &= 0b11111011;
+
+		return;
+	}
+
+	// Check STOPF bit
+	// Occurs at the end of the I2C packet
 	if(I2C_SR1 & 0b00010000){
 
 		// clear STOPF by reading SR1 then writing CR2
 		I2C_SR1;
+
 		// I2C_CR2 |= 0b00000010;
 		I2C_CR2 &= 0b11111101;
 		return;
 	}
 
-	// I2C_SR1 &= 0b00100000;
-	// I2C_SR2 &= 0b11010000;
+	// getting here likely indicates an error
+	// reset the BERR bit
+	I2C_SR2 &= 0b11111110;
 
 	return;
-
-	// // set_led(1);
-	// // disableInterrupts();
-
-	// // set_led(1);
-
-	// // I2C_SR2 &= 0b11010000;
-
-	// // if(I2C_SR3 & 0b00000000){
-	// // 	set_led(1);
-	// // 	// I2C_SR1 &= 0b00100000;
-	// // 	// I2C_SR2 &= 0b11010000;
-
- // //        delay(300000L);
-	// // }
-
-	// // if(I2C_SR2 & 0b00000001){
-	// // 	set_led(1);
-	// // 	// I2C_SR2 &= 0b11010000;
-	// // }
-
-	// set_led(0);
-
-	// enableInterrupts();
-
-	// 	I2C_SR2 &= 0b11111110;
-	// }
 }
 
 int main(void)
@@ -149,30 +134,23 @@ int main(void)
     // Set pin data direction as output
     PORT(LED_PORT, DDR)  |= LED_PIN; // i.e. PB_DDR |= (1 << 5);
     // Set pin as "Push-pull"
-    PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
+	PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
 
 	i2c_init();
-
 	set_led(1);
 
-    value = 10;
+	temp_value = 100;
 
 	while(1) {
 
-        // // value = analog_read();
+		temp_value = adc_read(3);
 
-		// address_received_flag = !address_received_flag;
+		if(value == 'A'){
+			// set_led(0);
+		} else {
+			// set_led(1);
+		}
 
-
-        // long delay_length = 300000L;
-        if(address_received_flag == 1){
-        	set_led(0);
-        } else {
-        	set_led(1);
-        }
-
-        delay(value * 3000L);
-
-        // wfi();
-    }
+		delay(value * 3000L);
+	}
 }
