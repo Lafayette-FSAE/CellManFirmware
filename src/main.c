@@ -9,6 +9,8 @@
 int address_received_flag;
 int i2c_activity;
 
+unsigned char address;
+
 unsigned char value;
 unsigned char temp_value;
 
@@ -67,7 +69,7 @@ void i2c_inter (void) __interrupt 19 {
 
 	// Check TXE bit
 	if(I2C_SR1 & 0b10000000){
-		I2C_DR = temp_value;
+		I2C_DR = address;
 
 		return;
 	}
@@ -119,21 +121,16 @@ int main(void)
 	gpio_set_pull_up(PORTC, 6, 1);
 	gpio_set_pull_up(PORTC, 7, 1);
 
-	// infer address from gpio
-	// unsigned int a4 = (PC_IDR & 0b10000000);
-	// unsigned int a3 = (PC_IDR & 0b01000000);
-	// unsigned int a0 = (PA_IDR & 0b00000010);
+	gpio_init_as_output(PORTA, 3);
 
-	unsigned int a3 = gpio_read_from(PORTA, 1);
+	unsigned int a0 = gpio_read_from(PORTA, 1);
+	unsigned int a1 = gpio_read_from(PORTC, 7);
+	unsigned int a2 = gpio_read_from(PORTC, 6);
+	unsigned int a3 = gpio_read_from(PORTC, 5);
+	unsigned int a4 = gpio_read_from(PORTC, 3);
 
-	int address;
-
-	if(a3){
-		address = 10;
-	} else {
-		value = 'A';
-		address = 11;
-	}
+	int address_bits[] = {a0, a1, a2, a3, a4, 0, 0, 0};
+	address = concat_bits(address_bits);
 
 
     /* Set clock to full speed (16 Mhz) */
@@ -145,7 +142,7 @@ int main(void)
     // Set pin as "Push-pull"
 	PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
 
-	i2c_init(address);
+	i2c_init(address + 7);
 	set_led(1);
 
 	temp_value = 100;
