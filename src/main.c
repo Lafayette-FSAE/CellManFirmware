@@ -5,36 +5,11 @@
 #include "i2c.h"
 #include "utils.h"
 
-/* I2C */
-// #define I2C_CR1 *(volatile unsigned char *)0x5210
-// #define I2C_CR2 *(volatile unsigned char *)0x5211
-// #define I2C_FREQR *(volatile unsigned char *)0x5212
-// #define I2C_OARL *(volatile unsigned char *)0x5213
-// #define I2C_OARH *(volatile unsigned char *)0x5214
-// #define I2C_DR *(volatile unsigned char *)0x5216
-// #define I2C_SR1 *(volatile unsigned char *)0x5217
-// #define I2C_SR2 *(volatile unsigned char *)0x5218
-// #define I2C_SR3 *(volatile unsigned char *)0x5219
-// #define I2C_ITR *(volatile unsigned char *)0x521A
-// #define I2C_CCRL *(volatile unsigned char *)0x521B
-// #define I2C_CCRH *(volatile unsigned char *)0x521C
-// #define I2C_TRISER *(volatile unsigned char *)0x521D
-// #define I2C_PECR *(volatile unsigned char *)0x521E
-
 int address_received_flag;
 int i2c_activity;
 
 unsigned char value;
 unsigned char temp_value;
-
-// typedef enum {
-// 	WAITING,
-// 	ADDING,
-// 	SENDING
-// } StateType;
-
-// StateType state;
-
 
 unsigned int adc_read(unsigned int channel){
 	unsigned int val=0;
