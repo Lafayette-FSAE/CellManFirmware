@@ -6,7 +6,7 @@ PROGRAMMER = stlinkv2
 
 BUILD_DIR = ./build
 SRC_DIR = ./src
-INC_DIR = ./inc
+INC_DIR = ./libs
 
 ## Get program name from enclosing directory name
 PROGRAM = $(lastword $(subst /, ,$(CURDIR)))

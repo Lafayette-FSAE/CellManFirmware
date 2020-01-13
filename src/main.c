@@ -4,6 +4,7 @@
 #include "stm8.h"
 #include "i2c.h"
 #include "utils.h"
+#include "gpio.h"
 
 int address_received_flag;
 int i2c_activity;
@@ -104,22 +105,30 @@ int main(void)
 {
 	// configure gpio inputs
 
-	// set pins to input mode
-	PC_DDR &= 0b00010111;
-	PA_DDR &= 0b11111100;
+	gpio_init_as_input(PORTA, 0);
+	gpio_init_as_input(PORTA, 1);
+	gpio_init_as_input(PORTC, 3);
+	gpio_init_as_input(PORTC, 5);
+	gpio_init_as_input(PORTC, 6);
+	gpio_init_as_input(PORTC, 7);
 
-	// set pins to pull up mode
-	PC_CR1 |= 0b11101000;
-	PA_CR1 |= 0b00000011;
+	gpio_set_pull_up(PORTA, 0, 1);
+	gpio_set_pull_up(PORTA, 1, 1);
+	gpio_set_pull_up(PORTC, 3, 1);
+	gpio_set_pull_up(PORTC, 4, 1);
+	gpio_set_pull_up(PORTC, 6, 1);
+	gpio_set_pull_up(PORTC, 7, 1);
 
 	// infer address from gpio
-	unsigned int a4 = (PC_IDR & 0b10000000);
-	unsigned int a3 = (PC_IDR & 0b01000000);
-	unsigned int a0 = (PA_IDR & 0b00000010);
+	// unsigned int a4 = (PC_IDR & 0b10000000);
+	// unsigned int a3 = (PC_IDR & 0b01000000);
+	// unsigned int a0 = (PA_IDR & 0b00000010);
+
+	unsigned int a3 = gpio_read_from(PORTA, 1);
 
 	int address;
 
-	if(a0){
+	if(a3){
 		address = 10;
 	} else {
 		value = 'A';
