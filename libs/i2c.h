@@ -4,9 +4,13 @@
 #include <stdint.h>
 #include "stm8.h"
 
-#define TEST_I2C 1234
+int data_size = 4;
+int data_index = 0;
+
+unsigned char data_to_transmit[4];
 
 void i2c_init(int address){
+	
 	rim(); // enable interrupts
 
 	I2C_CR1 = 0;					// Disable I2C peripheral in order to modify it

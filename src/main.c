@@ -2,9 +2,11 @@
 #include <stdint.h>
 
 #include "stm8.h"
+
 #include "i2c.h"
-#include "utils.h"
 #include "gpio.h"
+#include "adc.h"
+#include "utils.h"
 
 int address_received_flag;
 int i2c_activity;
@@ -13,35 +15,6 @@ unsigned char address;
 
 unsigned char value;
 unsigned char temp_value;
-
-unsigned int adc_read(unsigned int channel){
-	unsigned int val=0;
-
-	set_led(0);
-
-	ADC_CSR &= 0b01111111;
-
-	ADC_CSR |= ((0x0F) & channel); // Select Channel
-	ADC_CR2 |= (1 << 3); // Right Aligned DATA
-	ADC_CR1 |= (1 << 0); // ADC ON
-	ADC_CR1 |= (1 << 0); // ADC Start Conversion
-
-	// Wait until EOC bit is set by hardware
-	while((ADC_CSR) & 0b10000000 == 0);
-
-	// copy data from data registers into value
-	val |= (unsigned int) ADC_DRL;
-	val |= (unsigned int) ADC_DRH << 8;
-
-	// stop ADC conversion
-	ADC_CR1 &= ~(1 << 0);
-
-	set_led(1);
-
-	val &= 0x3FF;
-	return val;
-
-}
 
 void i2c_inter (void) __interrupt 19 {
 
@@ -69,7 +42,11 @@ void i2c_inter (void) __interrupt 19 {
 
 	// Check TXE bit
 	if(I2C_SR1 & 0b10000000){
-		I2C_DR = address;
+
+		I2C_DR = data_to_transmit[data_index];
+
+		data_index = (data_index + 1) % (data_size + 1);
+		// I2C_DR = temp_value;
 
 		return;
 	}
@@ -106,7 +83,6 @@ void i2c_inter (void) __interrupt 19 {
 int main(void)
 {
 	// configure gpio inputs
-
 	gpio_init_as_input(PORTA, 0);
 	gpio_init_as_input(PORTA, 1);
 	gpio_init_as_input(PORTC, 3);
@@ -150,12 +126,13 @@ int main(void)
 	while(1) {
 
 		temp_value = adc_read(3);
+		unsigned int cell_minus = adc_read(5);
 
-		if(value == 'A'){
-			set_led(0);
-		} else {
-			set_led(1);
-		}
+		data_to_transmit[0] = temp_value & 0b11111111;
+		data_to_transmit[1] = (temp_value >> 8) & 0b00000011;		
+
+		data_to_transmit[2] = cell_minus & 0b11111111;
+		data_to_transmit[3] = (cell_minus >> 8) & 0b11111111;
 
 		delay(value * 3000L);
 	}
