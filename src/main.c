@@ -14,7 +14,7 @@ int i2c_activity;
 unsigned char address;
 
 unsigned char value;
-unsigned char temp_value;
+// unsigned char temp_value;
 
 void i2c_inter (void) __interrupt 19 {
 
@@ -82,6 +82,8 @@ void i2c_inter (void) __interrupt 19 {
 
 int main(void)
 {
+
+
 	// configure gpio inputs
 	gpio_init_as_input(PORTA, 0);
 	gpio_init_as_input(PORTA, 1);
@@ -119,21 +121,26 @@ int main(void)
 	PORT(LED_PORT, CR1)  |= LED_PIN; // i.e. PB_CR1 |= (1 << 5);
 
 	i2c_init(address + 7);
-	set_led(1);
+	adc_init();
 
-	temp_value = 100;
+	// temp_value = 100;
 
 	while(1) {
 
-		temp_value = adc_read(3);
+
+		unsigned int temp_value = adc_read(4);
+		// unsigned int temp_value = 1023;
+
+
 		unsigned int cell_minus = adc_read(5);
+		// unsigned int cell_minus = 1023;
 
 		data_to_transmit[0] = temp_value & 0b11111111;
 		data_to_transmit[1] = (temp_value >> 8) & 0b00000011;		
 
 		data_to_transmit[2] = cell_minus & 0b11111111;
-		data_to_transmit[3] = (cell_minus >> 8) & 0b11111111;
+		data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
 
-		delay(value * 3000L);
+		// delay(value * 3000L);
 	}
 }
