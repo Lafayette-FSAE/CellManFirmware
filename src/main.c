@@ -6,6 +6,7 @@
 #include "i2c.h"
 #include "gpio.h"
 #include "adc.h"
+#include "pwm.h"
 #include "utils.h"
 
 int address_received_flag;
@@ -122,13 +123,21 @@ int main(void)
 
 	i2c_init(address + 7);
 	adc_init();
+	pwm_init();
+
+
+	set_led(1);
 
 	// temp_value = 100;
+
+	// ADC CHANNELS:
+	// 6 -- DIFF Amp output
+	// 5 -- Divided Cell_minus
 
 	while(1) {
 
 
-		unsigned int temp_value = adc_read(4);
+		unsigned int temp_value = adc_read(6);
 		// unsigned int temp_value = 1023;
 
 
