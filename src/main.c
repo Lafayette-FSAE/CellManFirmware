@@ -14,7 +14,7 @@ int i2c_activity;
 
 unsigned char address;
 
-unsigned char value;
+unsigned char i2c_received_value;
 // unsigned char temp_value;
 
 void i2c_inter (void) __interrupt 19 {
@@ -36,7 +36,10 @@ void i2c_inter (void) __interrupt 19 {
 
 		// reading I2C_DR also resets the RXNE bit
 		// so it is important that this gets read every time
-		// value = I2C_DR;
+		i2c_received_value = I2C_DR;
+		data_to_transmit[4] = i2c_received_value;
+
+		set_led(0);
 
 		return;
 	}
@@ -149,6 +152,10 @@ int main(void)
 
 		data_to_transmit[2] = cell_minus & 0b11111111;
 		data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
+
+		data_to_transmit[4] = i2c_received_value;
+
+		pwm_set_duty(i2c_received_value);
 
 		// delay(value * 3000L);
 	}

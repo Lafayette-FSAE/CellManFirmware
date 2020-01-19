@@ -42,11 +42,11 @@ void init_timer2(){
 void pwm_init(){
 	init_timer2();
 
-	TIM2_PSCR = 0x03;       //  Prescaler = 1.
-	TIM2_ARRH = 0xFF;       //  High byte of 50,000.
-	TIM2_ARRL = 0xFF;       //  Low byte of 50,000.
-	TIM2_CCR1H = 0x80;      //  High byte of 12,500
-	TIM2_CCR1L = 0xF0;      //  Low byte of 12,500
+	TIM2_PSCR = 0x01;       //  Prescaler = 1.
+	TIM2_ARRH = 0x05;       //  High byte of 50,000.
+	TIM2_ARRL = 0x00;       //  Low byte of 50,000.
+	TIM2_CCR1H = 0x01;      //  High byte of 12,500
+	TIM2_CCR1L = 0xA0;      //  Low byte of 12,500
 
 	TIM2_CCER1 &= ~(1 << 1);
 	TIM2_CCER1 |= (1 << 0);
@@ -65,6 +65,10 @@ void pwm_init(){
 
 	TIM2_IER |= (1 << 0);
 	TIM2_CR1 |= (1 << 0);
+}
+
+void pwm_set_duty(int duty){
+	// TIM2_CCR1H = duty;
 }
 
 #endif // __PWM

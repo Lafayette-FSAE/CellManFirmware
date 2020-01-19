@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include "stm8.h"
 
-int data_size = 4;
+int data_size = 5;
 int data_index = 0;
 
-unsigned char data_to_transmit[4];
+unsigned char data_to_transmit[5];
 
 void i2c_init(int address){
 	
