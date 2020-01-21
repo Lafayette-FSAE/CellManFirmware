@@ -144,7 +144,7 @@ int main(void)
 		// unsigned int temp_value = 1023;
 
 
-		unsigned int cell_minus = adc_read(5);
+		unsigned int cell_minus = adc_read(8);
 		// unsigned int cell_minus = 1023;
 
 		data_to_transmit[0] = temp_value & 0b11111111;

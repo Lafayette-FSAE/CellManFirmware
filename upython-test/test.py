@@ -34,6 +34,21 @@ def get_duty(address):
 def set_duty(address, duty):
 	bus.writeto(address, duty);
 
+def get_cell_voltage(address):
+	data = get_data(address)
+	voltage, _, _, = data
+
+	voltage = ((voltage / 1024) * 5) - 1
+
+	return voltage
+
+def voltage_test():
+	while True:
+		voltage = get_cell_voltage(12)
+		print('{} V'.format(voltage))
+		time.sleep(.1)
+
+
 def begin():
 	while True:
 		cellmen = bus.scan()
