@@ -40,6 +40,7 @@ void i2c_inter (void) __interrupt 19 {
 		data_to_transmit[4] = i2c_received_value;
 
 		set_led(0);
+		pwm_set_duty(i2c_received_value);
 
 		return;
 	}
@@ -83,6 +84,8 @@ void i2c_inter (void) __interrupt 19 {
 
 	return;
 }
+
+int duty = 0;
 
 int main(void)
 {
@@ -128,35 +131,47 @@ int main(void)
 	adc_init();
 	pwm_init();
 
+	int target_voltage = 1;
 
 	set_led(1);
-
-	// temp_value = 100;
+	pwm_set_duty(0);
 
 	// ADC CHANNELS:
 	// 6 -- DIFF Amp output
 	// 5 -- Divided Cell_minus
+	// 2 -- Balance Current
+	// 3 -- Balance Feedback (Voltage)
+	// 4 -- Cell Temp
 
 	while(1) {
 
+		unsigned int balance_current = adc_read(2);
+		unsigned int balance_feedback = adc_read(3);
+		unsigned int cell_temp = adc_read(4);
+		unsigned int cell_minus = adc_read(5);
+		unsigned int cell_voltage = adc_read(6);
 
-		unsigned int temp_value = adc_read(6);
-		// unsigned int temp_value = 1023;
+		data_to_transmit[0] =  balance_current & 0b11111111;
+		data_to_transmit[1] = (balance_current >> 8) & 0b00000011;		
 
+		data_to_transmit[2] = balance_feedback & 0b11111111;
+		data_to_transmit[3] = (balance_feedback >> 8) & 0b00000011;
 
-		unsigned int cell_minus = adc_read(8);
-		// unsigned int cell_minus = 1023;
+		data_to_transmit[4] = cell_temp & 0b11111111;
+		data_to_transmit[5] = (cell_temp >> 8) & 0b00000011;
 
-		data_to_transmit[0] = temp_value & 0b11111111;
-		data_to_transmit[1] = (temp_value >> 8) & 0b00000011;		
+		data_to_transmit[6] = cell_minus & 0b11111111;
+		data_to_transmit[7] = (cell_minus >> 8) & 0b00000011;
 
-		data_to_transmit[2] = cell_minus & 0b11111111;
-		data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
+		data_to_transmit[8] = cell_voltage & 0b11111111;
+		data_to_transmit[9] = (cell_voltage >> 8) & 0b00000011;
 
-		data_to_transmit[4] = i2c_received_value;
+		data_to_transmit[10] = i2c_received_value;
 
-		pwm_set_duty(i2c_received_value);
+		// data_to_transmit[0] = cell_voltage & 0b11111111;
+		// data_to_transmit[1] = (cell_voltage >> 8) & 0b00000011;
 
-		// delay(value * 3000L);
+		// data_to_transmit[2] = cell_minus & 0b11111111;
+		// data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
 	}
 }
