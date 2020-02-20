@@ -17,80 +17,10 @@ unsigned char address;
 unsigned char i2c_received_value;
 // unsigned char temp_value;
 
-void i2c_inter (void) __interrupt 19 {
-
-	// Check Address Bit
-	// Occurs at start of I2C packet
-	if(I2C_SR1 & 0b00000010){
-
-		// clear ADDR by reading SR1 followed by SR3
-		I2C_SR1;
-		I2C_SR3;
-
-		return;
-	}
-
-	// Check RXNE bit
-	// Occurs after each byte when there is data to read in the DR register
-	if(I2C_SR1 & 0b01000000){
-
-		// reading I2C_DR also resets the RXNE bit
-		// so it is important that this gets read every time
-		i2c_received_value = I2C_DR;
-		data_to_transmit[4] = i2c_received_value;
-
-		set_led(0);
-		pwm_set_duty(i2c_received_value);
-
-		return;
-	}
-
-	// Check TXE bit
-	if(I2C_SR1 & 0b10000000){
-
-		I2C_DR = data_to_transmit[data_index];
-
-		data_index = (data_index + 1) % (data_size + 1);
-		// I2C_DR = temp_value;
-
-		return;
-	}
-
-	// Check AF bit
-	// should occur when master stops requesting data
-	if(I2C_SR2 & 0b00000100){
-
-		// clear AF bit by writing a 0 to it
-		I2C_SR2 &= 0b11111011;
-
-		return;
-	}
-
-	// Check STOPF bit
-	// Occurs at the end of the I2C packet
-	if(I2C_SR1 & 0b00010000){
-
-		// clear STOPF by reading SR1 then writing CR2
-		I2C_SR1;
-
-		// I2C_CR2 |= 0b00000010;
-		I2C_CR2 &= 0b11111101;
-		return;
-	}
-
-	// getting here likely indicates an error
-	// reset the BERR bit
-	I2C_SR2 &= 0b11111110;
-
-	return;
-}
-
 int duty = 0;
 
 int main(void)
 {
-
-
 	// configure gpio inputs
 	gpio_init_as_input(PORTA, 0);
 	gpio_init_as_input(PORTA, 1);
@@ -151,22 +81,34 @@ int main(void)
 		unsigned int cell_minus = adc_read(5);
 		unsigned int cell_voltage = adc_read(6);
 
-		data_to_transmit[0] =  balance_current & 0b11111111;
-		data_to_transmit[1] = (balance_current >> 8) & 0b00000011;		
+		int16_t user_reg = i2c_registers[0x22];
 
-		data_to_transmit[2] = balance_feedback & 0b11111111;
-		data_to_transmit[3] = (balance_feedback >> 8) & 0b00000011;
+		unsigned char top_byte = user_reg & 0xff;
+		unsigned char bottom_byte = (user_reg >> 8) & 0xff;
 
-		data_to_transmit[4] = cell_temp & 0b11111111;
-		data_to_transmit[5] = (cell_temp >> 8) & 0b00000011;
+		data_to_transmit[0] = top_byte;
+		data_to_transmit[1] = bottom_byte;
 
-		data_to_transmit[6] = cell_minus & 0b11111111;
-		data_to_transmit[7] = (cell_minus >> 8) & 0b00000011;
+		data_to_transmit[2] = 0x15;
+		data_to_transmit[3] = 0x16;
+		data_to_transmit[4] = 0x17;
 
-		data_to_transmit[8] = cell_voltage & 0b11111111;
-		data_to_transmit[9] = (cell_voltage >> 8) & 0b00000011;
+		// data_to_transmit[0] =  balance_current & 0b11111111;
+		// data_to_transmit[1] = (balance_current >> 8) & 0b00000011;		
 
-		data_to_transmit[10] = i2c_received_value;
+		// data_to_transmit[2] = balance_feedback & 0b11111111;
+		// data_to_transmit[3] = (balance_feedback >> 8) & 0b00000011;
+
+		// data_to_transmit[4] = cell_temp & 0b11111111;
+		// data_to_transmit[5] = (cell_temp >> 8) & 0b00000011;
+
+		// data_to_transmit[6] = cell_minus & 0b11111111;
+		// data_to_transmit[7] = (cell_minus >> 8) & 0b00000011;
+
+		// data_to_transmit[8] = cell_voltage & 0b11111111;
+		// data_to_transmit[9] = (cell_voltage >> 8) & 0b00000011;
+
+		// data_to_transmit[10] = i2c_received_value;
 
 		// data_to_transmit[0] = cell_voltage & 0b11111111;
 		// data_to_transmit[1] = (cell_voltage >> 8) & 0b00000011;

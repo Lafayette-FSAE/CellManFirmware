@@ -4,6 +4,10 @@ import time
 # bus = machine.I2C(scl=machine.Pin(15), sda=machine.Pin(2))
 bus = machine.I2C(scl=machine.Pin(18), sda=machine.Pin(19))
 
+def send(address, data):
+	data_bytes = bytearray(data)
+	bus.writeto(address, data_bytes)
+
 
 addresses = bus.scan()
 
