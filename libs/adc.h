@@ -11,19 +11,11 @@ void adc_init(){
 	ADC_CR2 &= ~(1 << 1); // SCAN bit is off
 }
 
-unsigned int adc_read(unsigned int channel){
+uint16_t adc_read(unsigned int channel){
 	
-	unsigned int output = 0;
+	uint16_t output = 0;
 
 	ADC_CSR &= 0b01111111;
-
-	// if(channel == 5){
-	// 	ADC_CSR &= (0b11110000);
-	// 	ADC_CSR |= (0b00000101);
-	// } else {
-	// 	ADC_CSR &= (0b11110000);
-	// 	ADC_CSR |= (0b00000100);
-	// }
 
 	ADC_CSR &= (0b11110000);
 	ADC_CSR |= ((0x0F) & channel); // Select Channel
@@ -32,7 +24,7 @@ unsigned int adc_read(unsigned int channel){
 	ADC_CR1 |= (1 << 0); // ADC Start Conversion
 
 	// Wait until EOC bit is set by hardware
-	while((ADC_CSR) & 0b10000000 == 0){
+	while(!((ADC_CSR) & 0b10000000)){
 		nop();
 	}
 

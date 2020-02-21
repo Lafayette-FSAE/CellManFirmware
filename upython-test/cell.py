@@ -16,6 +16,27 @@ print(addresses)
 
 power_supply = 3.5
 
+def adc_to_voltage(byte_high, byte_low):
+	adc_value = (byte_high * 256) + byte_low
+
+	voltage = (adc_value * 5) / 1024
+
+	return round(voltage, 2)
+
+def get_voltage(pos_high, pos_low):
+	data_bytes = bus.readfrom(8, 11)
+	voltage = adc_to_voltage(byte_high=data_bytes[pos_high], byte_low=data_bytes[pos_low])
+
+	return voltage
+
+def temp():
+	volts = get_voltage(3, 2)
+	return volts_to_temp(volts)
+
+def volts_to_temp(voltage):
+	return (voltage * 30.14) - 16.6
+
+
 def calibrate_voltage(raw_value):
 	pin_voltage = (raw_value / 1024) * power_supply # 10bit ADC on 3.3V supply
 	cell_voltage = (pin_voltage * 2) - 1

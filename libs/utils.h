@@ -6,6 +6,17 @@
 #define LED_PORT    PA
 #define LED_PIN     PIN3
 
+// returns the most significant byte
+// of the given 16 bit integer
+uint8_t msb(uint16_t value){
+	return (value >> 8) & 0xff;
+}
+
+// returns the least significant byte
+// of the given 16 bit integer
+uint8_t lsb(uint16_t value){
+	return (value) & 0xff;
+}
 
 int concat_bits(int bits[]){
 

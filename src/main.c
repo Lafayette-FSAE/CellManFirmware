@@ -7,7 +7,9 @@
 #include "gpio.h"
 #include "adc.h"
 #include "pwm.h"
+
 #include "utils.h"
+#include "data_collector.h"
 
 int address_received_flag;
 int i2c_activity;
@@ -77,7 +79,14 @@ int main(void)
 
 		unsigned int balance_current = adc_read(2);
 		unsigned int balance_feedback = adc_read(3);
-		unsigned int cell_temp = adc_read(4);
+		
+		uint16_t cell_temp = adc_read(4);
+
+		float temp_voltage = adc_voltage(cell_temp);
+		uint8_t voltage_value = (uint8_t)(temp_voltage * 100);
+
+		float temp = calibrate_temp(temp_voltage);
+
 		unsigned int cell_minus = adc_read(5);
 		unsigned int cell_voltage = adc_read(6);
 
@@ -89,18 +98,17 @@ int main(void)
 		data_to_transmit[0] = top_byte;
 		data_to_transmit[1] = bottom_byte;
 
-		data_to_transmit[2] = 0x15;
-		data_to_transmit[3] = 0x16;
-		data_to_transmit[4] = 0x17;
-
 		// data_to_transmit[0] =  balance_current & 0b11111111;
 		// data_to_transmit[1] = (balance_current >> 8) & 0b00000011;		
 
 		// data_to_transmit[2] = balance_feedback & 0b11111111;
 		// data_to_transmit[3] = (balance_feedback >> 8) & 0b00000011;
 
-		// data_to_transmit[4] = cell_temp & 0b11111111;
-		// data_to_transmit[5] = (cell_temp >> 8) & 0b00000011;
+		uint16_t temp_16bit = (uint16_t)(temp * 10);
+		data_to_transmit[3] = lsb(temp_16bit);
+		data_to_transmit[4] = msb(temp_16bit);
+
+		// data_to_transmit[4] = (uint8_t)(temp * 10);
 
 		// data_to_transmit[6] = cell_minus & 0b11111111;
 		// data_to_transmit[7] = (cell_minus >> 8) & 0b00000011;
@@ -115,5 +123,9 @@ int main(void)
 
 		// data_to_transmit[2] = cell_minus & 0b11111111;
 		// data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
+	
+		// LED behavior
+		int16_t led_status = i2c_registers[0x23];
+		set_led(led_status);
 	}
 }
