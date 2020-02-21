@@ -80,52 +80,42 @@ int main(void)
 		unsigned int balance_current = adc_read(2);
 		unsigned int balance_feedback = adc_read(3);
 		
-		uint16_t cell_temp = adc_read(4);
-
-		float temp_voltage = adc_voltage(cell_temp);
-		uint8_t voltage_value = (uint8_t)(temp_voltage * 100);
-
-		float temp = calibrate_temp(temp_voltage);
-
-		unsigned int cell_minus = adc_read(5);
-		unsigned int cell_voltage = adc_read(6);
-
 		int16_t user_reg = i2c_registers[0x22];
+		data_to_transmit[0] = lsb(user_reg);
 
-		unsigned char top_byte = user_reg & 0xff;
-		unsigned char bottom_byte = (user_reg >> 8) & 0xff;
+		// Cell Voltage
+		float cell_voltage_raw = adc_voltage_on_channel(6);
+		float cell_voltage = calibrate_cell_voltage(cell_voltage_raw);
+		uint16_t cell_voltage_mv = (uint16_t)(cell_voltage * 1000); 
+		
+		data_to_transmit[1] = lsb(cell_voltage_mv);
+		data_to_transmit[2] = msb(cell_voltage_mv);	
 
-		data_to_transmit[0] = top_byte;
-		data_to_transmit[1] = bottom_byte;
-
-		// data_to_transmit[0] =  balance_current & 0b11111111;
-		// data_to_transmit[1] = (balance_current >> 8) & 0b00000011;		
-
-		// data_to_transmit[2] = balance_feedback & 0b11111111;
-		// data_to_transmit[3] = (balance_feedback >> 8) & 0b00000011;
-
+		// Temperature
+		float temp_voltage = adc_voltage_on_channel(4);
+		float temp = calibrate_temp(temp_voltage);
 		uint16_t temp_16bit = (uint16_t)(temp * 10);
+
 		data_to_transmit[3] = lsb(temp_16bit);
 		data_to_transmit[4] = msb(temp_16bit);
 
-		// data_to_transmit[4] = (uint8_t)(temp * 10);
+		// Cell Position (Absolute Cell Minus Voltage)
+		unsigned int cell_minus = adc_read(5);
+		data_to_transmit[5] = lsb(cell_minus);
+		data_to_transmit[6] = msb(cell_minus);
 
-		// data_to_transmit[6] = cell_minus & 0b11111111;
-		// data_to_transmit[7] = (cell_minus >> 8) & 0b00000011;
-
-		// data_to_transmit[8] = cell_voltage & 0b11111111;
-		// data_to_transmit[9] = (cell_voltage >> 8) & 0b00000011;
-
-		// data_to_transmit[10] = i2c_received_value;
-
-		// data_to_transmit[0] = cell_voltage & 0b11111111;
-		// data_to_transmit[1] = (cell_voltage >> 8) & 0b00000011;
-
-		// data_to_transmit[2] = cell_minus & 0b11111111;
-		// data_to_transmit[3] = (cell_minus >> 8) & 0b00000011;
 	
 		// LED behavior
 		int16_t led_status = i2c_registers[0x23];
 		set_led(led_status);
+
+
+		// Balance Behavior
+		uint16_t balance_active = i2c_registers[0x11];
+		if(balance_active) {
+			pwm_set_duty(0x20);
+		} else {
+			pwm_set_duty(0);
+		}
 	}
 }
