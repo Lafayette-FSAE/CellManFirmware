@@ -14,7 +14,53 @@ addresses = bus.scan()
 print("current addresses on bus:")
 print(addresses)
 
-power_supply = 3.5
+notes = {
+	'C_MIDDLE': 262,
+	'D': 294,
+	'E': 330,
+	'F': 349,
+	'G': 392,
+	'A': 440,
+	'B': 494,
+	'C': 523,
+}
+
+song = ['C_MIDDLE', 'C_MIDDLE', 'G', 'G', 'A', 'A', 'G', 'F', 'F', 'E', 'E', 'D', 'D', 'C_MIDDLE']
+# note_lengths = ['']
+
+def twinkle(volume=20):
+	address = 8
+
+	for note in song:
+		frequency = notes[note] * 2
+		print(frequency)
+		balance(8, True)
+		freq(8, frequency)
+		duty(8, volume)
+		time.sleep(0.5)
+		balance(8, False)
+		time.sleep(0.1)
+
+def balance(address, enable):
+	if enable:
+		value = 0x01
+	else:
+		value = 0x00
+
+	send(address, [0x11, 0x00, value])
+
+def duty(address, duty):
+	send(address, [0x12, 0x00, int(duty)])
+
+def freq(address, frequency):
+	freq = frequency
+
+	msb = int(freq) // 256
+	lsb = int(freq) %  256
+
+
+
+	send(address, [0x13, msb, lsb])
 
 def read(address, number):
 	output = []
@@ -66,18 +112,6 @@ def calibrate_cell_minus(raw_value):
 
 	return minus_voltage
 
-def get_data(address):
-	data_bytes = bus.readfrom(address, 11)
-
-	bal_current_raw = (data_bytes[1] * 256) + data_bytes[0]
-	bal_feedback_raw = (data_bytes[3] * 256) + data_bytes[2]
-	cell_temp_raw = (data_bytes[5] * 256) + data_bytes[4]
-	cell_minus_raw = (data_bytes[7] * 256) + data_bytes[6]
-	cell_voltage_raw = (data_bytes[9] * 256) + data_bytes[8]
-	
-	write_register = data_bytes[10]
-
-	return [bal_current_raw, bal_feedback_raw, cell_temp_raw, cell_minus_raw, cell_voltage_raw, write_register]
 
 def poll(address):
 	while True:

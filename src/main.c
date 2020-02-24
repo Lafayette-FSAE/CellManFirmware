@@ -68,6 +68,12 @@ int main(void)
 	set_led(1);
 	pwm_set_duty(0);
 
+	// TODO: delete this its dangerous
+	i2c_registers[0x11] = 1; // set balance to enabled by default for testing
+	i2c_registers[0x12] = 20;
+	i2c_registers[0x13] = 10000;
+
+
 	// ADC CHANNELS:
 	// 6 -- DIFF Amp output
 	// 5 -- Divided Cell_minus
@@ -104,16 +110,20 @@ int main(void)
 		data_to_transmit[5] = lsb(cell_minus);
 		data_to_transmit[6] = msb(cell_minus);
 
-	
 		// LED behavior
 		int16_t led_status = i2c_registers[0x23];
 		set_led(led_status);
 
-
 		// Balance Behavior
 		uint16_t balance_active = i2c_registers[0x11];
+		uint16_t duty_cycle = i2c_registers[0x12];
+		uint16_t frequency = i2c_registers[0x13];
+
+		float freq = (float)(frequency);
+
 		if(balance_active) {
-			pwm_set_duty(0x20);
+			pwm_set_freq(freq);
+			pwm_set_duty(duty_cycle);
 		} else {
 			pwm_set_duty(0);
 		}

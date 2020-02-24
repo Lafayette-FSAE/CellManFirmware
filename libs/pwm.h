@@ -4,13 +4,30 @@
 #include "stm8.h"
 #include "utils.h"
 
-int led_value = 0;
+// the period of the pwm signal in units of clock cycles
+uint16_t cycles;
+void pwm_set_freq(float freq){
+	// assume prescaler of 1,
+	// should mean a clock speed of 16MHz
 
-void pwm_inter (void) __interrupt 13 {
-	// led_value = !led_value;
-	// set_led(led_value);
+	// expect freq as a float with units of kHz
+	float period = 1 / freq;
 
-	TIM2_SR1 &= ~(1 << 0);
+	// convert period from units in seconds to an integer multiple
+	// of clock cycles
+
+	cycles = (uint16_t)(period * 16000000);
+	TIM2_ARRH = msb(cycles);
+	TIM2_ARRL = lsb(cycles);
+}
+
+void pwm_set_duty(uint16_t duty_cycle_percent){
+	float duty = (float)(duty_cycle_percent) / 100;
+
+	uint16_t cycles_on = (uint16_t)(cycles * duty);
+
+	TIM2_CCR1H = msb(cycles_on);
+	TIM2_CCR1L = lsb(cycles_on);
 }
 
 void init_timer2(){
@@ -43,10 +60,9 @@ void pwm_init(){
 	init_timer2();
 
 	TIM2_PSCR = 0x01;       //  Prescaler = 1.
-	TIM2_ARRH = 0x08;       //  High byte of 50,000.
-	TIM2_ARRL = 0x00;       //  Low byte of 50,000.
-	TIM2_CCR1H = 0x00;      //  High byte of 12,500
-	TIM2_CCR1L = 0x40;      //  Low byte of 12,500
+
+	pwm_set_freq(10.0); // 10kHz
+	pwm_set_duty(20); 	// 20 percent
 
 	TIM2_CCER1 &= ~(1 << 1);
 	TIM2_CCER1 |= (1 << 0);
@@ -63,12 +79,8 @@ void pwm_init(){
 	TIM2_CCMR1 &= ~(1 << 4);
 	TIM2_CCMR1 |= (3 << 5);
 
-	TIM2_IER |= (1 << 0);
+	// TIM2_IER |= (1 << 0);
 	TIM2_CR1 |= (1 << 0);
-}
-
-void pwm_set_duty(int duty){
-	TIM2_CCR1L = duty;
 }
 
 #endif // __PWM
