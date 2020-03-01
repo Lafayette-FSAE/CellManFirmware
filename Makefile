@@ -1,4 +1,6 @@
-## Select one of these
+BRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
+VERSION:=$(shell git describe --tags)
+
 DEVICE=stm8s003f3
 
 CC = sdcc
@@ -15,14 +17,17 @@ SOURCES=$(wildcard $(SOURCEDIR)/*.c)
 OBJECTS=$(notdir $(SOURCES:.c=.rel))
 HEADERS=$(wildcard $(SOURCEDIR)/*.h)
 
-DEFINES=
-## Set MCU-type DEFINE
-ifeq ($(DEVICE),stm8s003f3)
-    DEFINES += -DSTM8S003
-endif
-ifeq ($(DEVICE),stm8s103f3)
-    DEFINES += -DSTM8S103
-endif
+# DEFINES=
+# ## Set MCU-type DEFINE
+# ifeq ($(DEVICE),stm8s003f3)
+#     DEFINES += -DSTM8S003
+# endif
+# ifeq ($(DEVICE),stm8s103f3)
+#     DEFINES += -DSTM8S103
+# endif
+
+DEFINES += -D BRANCH=$(BRANCH)
+DEFINES += -D VERSION=$(VERSION)
 
 # CPPFLAGS = -I$(LIBDIR)/inc -I$(SOURCEDIR)
 # VPATH = src:$(LIBDIR)/src
@@ -40,7 +45,7 @@ default: $(BUILD_DIR)/main.ihx
 
 $(BUILD_DIR)/main.ihx : $(SRC_DIR)/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) clean
 	@mkdir -p $(BUILD_DIR)
-	sdcc -mstm8 -I$(INC_DIR) -D STM8S003 $(LFLAGS) src/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) -o $(BUILD_DIR)/main.ihx
+	sdcc -mstm8 -I$(INC_DIR) -D STM8S003 $(DEFINES) src/main.c $(addprefix $(BUILD_DIR)/, $(OBJ_FILES)) -o $(BUILD_DIR)/main.ihx
 
 clean:
 	rm -rf $(BUILD_DIR)

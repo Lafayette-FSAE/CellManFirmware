@@ -1,4 +1,16 @@
-/* The "Hello world!" of microcontrollers. Blink LED on/off */
+// Metadata from Makefile
+#ifndef VERSION
+#define VERSION 0
+#endif
+
+#ifndef SUBVERSION
+#define SUBVERSION 0
+#endif
+
+#ifndef BRANCH
+#define BRANCH "master"
+#endif
+
 #include <stdint.h>
 
 #include "stm8.h"
@@ -16,6 +28,13 @@ int i2c_activity;
 
 unsigned char address;
 
+#define xstr(s) str(s)
+#define str(s) #s
+
+char version_str[5] = xstr(VERSION);
+uint8_t version_int;
+uint8_t subversion_int;
+
 unsigned char i2c_received_value;
 // unsigned char temp_value;
 
@@ -23,6 +42,10 @@ int duty = 0;
 
 int main(void)
 {
+	// Expect version strings in fromat vX.Y
+	version_int = (uint8_t)(version_str[1] - '0');
+	subversion_int = (uint8_t)(version_str[3] - '0');
+
 	// configure gpio inputs
 	gpio_init_as_input(PORTA, 0);
 	gpio_init_as_input(PORTA, 1);
@@ -78,8 +101,8 @@ int main(void)
 		unsigned int balance_current = adc_read(2);
 		unsigned int balance_feedback = adc_read(3);
 		
-		int16_t user_reg = i2c_registers[0x22];
-		data_to_transmit[0] = lsb(user_reg);
+		// float version_float = atof("VERSION");
+		data_to_transmit[0] = lsb(version_int * 10 + subversion_int);
 
 		// Cell Voltage
 		float cell_voltage_raw = adc_voltage_on_channel(6);
