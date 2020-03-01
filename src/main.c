@@ -63,16 +63,8 @@ int main(void)
 	adc_init();
 	pwm_init();
 
-	int target_voltage = 1;
-
 	set_led(1);
 	pwm_set_duty(0);
-
-	// TODO: delete this its dangerous
-	i2c_registers[0x11] = 1; // set balance to enabled by default for testing
-	i2c_registers[0x12] = 20;
-	i2c_registers[0x13] = 10000;
-
 
 	// ADC CHANNELS:
 	// 6 -- DIFF Amp output
